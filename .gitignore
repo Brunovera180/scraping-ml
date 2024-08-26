@@ -1,0 +1,14 @@
+# Node modules
+node_modules/
+
+# Environment files
+.env
+
+# CSV files
+*.csv
+
+# Ignore package-lock.json
+package-lock.json
+
+# otras carpetas
+img/
