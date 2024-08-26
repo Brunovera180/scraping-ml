@@ -11,14 +11,14 @@ require('dotenv').config();
     await page.goto(process.env.URL);
     
     // Esperar a que la página cargue completamente
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('.nav-logo', { timeout: 10000 });
+
     
     // Realizar búsqueda
     await page.type('#cb1-edit', process.env.SEARCH);
     await page.click('.nav-icon-search');
     
     // Esperar a que los resultados se carguen
-    await page.waitForTimeout(2000);
     await page.waitForSelector('.poly-card__content', { timeout: 10000 });
 
     // Extraer los datos
@@ -67,6 +67,5 @@ require('dotenv').config();
 
     console.log('Datos extraídos y guardados en mercado-libre.csv');
 
-    await page.waitForTimeout(6000);
     await browser.close();
 })();
