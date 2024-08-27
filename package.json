@@ -1,7 +1,20 @@
 {
+  "name": "mercado-libre-scraper",
+  "version": "1.0.0",
+  "description": "Scraper para extraer datos de productos de Mercado Libre",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
-    "dotenv": "^16.4.5",
-    "mongodb": "^4.7.0",
-    "puppeteer": "^23.1.1"
-  }
+    "@prisma/client": "^5.18.0",
+    "axios": "^1.4.0",
+    "dotenv": "^16.0.3",
+    "puppeteer": "^22.1.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "author": "",
+  "license": "ISC"
 }

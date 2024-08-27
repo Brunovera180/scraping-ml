@@ -1,7 +1,10 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
+const { PrismaClient } = require('@prisma/client');
+const dotenv = require('dotenv');
 
-require('dotenv').config();
+dotenv.config();
+const prisma = new PrismaClient();
 
 (async () => {
     const browser = await puppeteer.launch({ headless: true });
@@ -13,7 +16,6 @@ require('dotenv').config();
     // Esperar a que la página cargue completamente
     await page.waitForSelector('.nav-logo', { timeout: 10000 });
 
-    
     // Realizar búsqueda
     await page.type('#cb1-edit', process.env.SEARCH);
     await page.click('.nav-icon-search');
@@ -23,32 +25,38 @@ require('dotenv').config();
 
     // Extraer los datos
     const datos = await page.evaluate(() => {
-        // Seleccionar todos los contenedores de contenido
         const elementos = document.querySelectorAll('.poly-card__content');
         
         return Array.from(elementos).map(elemento => {
-            // Encontrar el contenedor de imagen al mismo nivel
             const portadaElem = elemento.parentElement.querySelector('.poly-card__portada');
             
             const tituloElem = elemento.querySelector('.poly-component__title');
-            const precioElem = elemento.querySelector('.poly-component__price');
+            const precioElem = elemento.querySelector('.poly-price__current');
             const envioElem = elemento.querySelector('.poly-component__shipping');
             const imagenElem = portadaElem ? portadaElem.querySelector('img') : null;
             
-            // Extraer el enlace y el texto del título
             const link = tituloElem ? tituloElem.href : null;
             const titulo = tituloElem ? tituloElem.textContent.trim() : null;
             const precio = precioElem ? precioElem.textContent.trim() : null;
             const envio = envioElem ? envioElem.textContent.trim() : null;
-            const imagenUrl = imagenElem ? imagenElem.src : null; // Extraer el atributo src de la imagen
-            
-            // Convertir el precio a un número para ordenar correctamente
-            const precioNum = parseFloat(precio ? precio.replace(/[^0-9,.]/g, '').replace(',', '.') : 'NaN');
+            const imagenUrl = imagenElem ? imagenElem.src : null;
+
+            // Precio tiene que dejar de ser string y pasar a ser float
+            let precioNum = null;
+            if (precio) {
+                // Eliminar símbolos de dólar y comas
+                const cleanedPrice = precio.replace(/[$,]/g, '');
+                precioNum = parseFloat(cleanedPrice);
+                
+                // Formatear a 3 decimales
+                if (!isNaN(precioNum)) {
+                    precioNum = precioNum.toFixed(3);
+                }
+            }
 
             return {
                 titulo: titulo,
-                precio: precio,
-                precioNum: isNaN(precioNum) ? Infinity : precioNum,
+                precio: precioNum,
                 envio: envio,
                 link: link,
                 imagen: imagenUrl
@@ -56,16 +64,20 @@ require('dotenv').config();
         });
     });
 
-    // Ordenar los datos por precio (de menor a mayor)
-    const datosOrdenados = datos.sort((a, b) => a.precioNum - b.precioNum);
+    // Insertar los datos en la base de datos
+    for (const dato of datos) {
+        await prisma.producto.create({
+            data: {
+                titulo: dato.titulo,
+                precio: parseFloat(dato.precio), // Asegúrate de convertir a float
+                envio: dato.envio,
+                link: dato.link,
+                imagen: dato.imagen
+            }
+        });
+    }
 
-    // Crear el CSV
-    const csv = datosOrdenados.map(dato => `"${dato.titulo}","${dato.precio}","${dato.envio}","${dato.link}","${dato.imagen}"`).join('\n');
-
-    // Guardar los datos en un archivo CSV
-    fs.writeFileSync('mercado-libre.csv', csv);
-
-    console.log('Datos extraídos y guardados en mercado-libre.csv');
+    console.log('Datos extraídos y guardados en la base de datos.');
 
     await browser.close();
 })();
