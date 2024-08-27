@@ -1,0 +1,20 @@
+// Configuración de la base de datos
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Configuración del generador de Prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Definición del modelo de datos
+model Producto {
+    id       Int     @id @default(autoincrement())
+    titulo   String
+    precio   Decimal @db.Decimal(10, 3) // Precisión 10, escala 3 (dígitos totales, lugares decimales)
+    envio    String?
+    link     String?
+    imagen   String?
+}
