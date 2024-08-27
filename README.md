@@ -1,47 +1,94 @@
-# Scraper de Mercado Libre con Puppeteer
+# Proyecto de Scraping y Almacenamiento de Datos
 
-Este proyecto es un scraper de precios para Mercado Libre, utilizando Puppeteer para automatizar la navegación web y extraer información de productos. Los datos extraídos se guardan en un archivo CSV.
-
-## Descripción
-
-El script navega por Mercado Libre, realiza una búsqueda basada en un término definido en el archivo `.env`, extrae información sobre los productos encontrados (como título, precio, método de envío, enlace y URL de la imagen), y guarda estos datos en un archivo CSV.
+Este proyecto utiliza Puppeteer para hacer scraping de datos de precios y productos de un sitio web, y almacena los datos extraídos en una base de datos PostgreSQL utilizando Prisma.
 
 ## Instalación
 
-Para usar este proyecto, sigue estos pasos:
-
-1. **Clona el repositorio:**
+1. **Clonar el repositorio:**
 
     ```bash
-    git clone git@github.com:Brunovera180/scraping-ml.git
+    git clone <URL_DEL_REPOSITORIO>
     ```
 
-2. **Navega al directorio del proyecto:**
+2. **Instalar dependencias:**
 
-    ```bash
-    cd scraping-ml
-    ```
-
-3. **Instala las dependencias:**
-
-    Asegúrate de tener [Node.js](https://nodejs.org/) y [npm](https://www.npmjs.com/) instalados en tu sistema. Luego, instala las dependencias del proyecto con:
+    Navega al directorio del proyecto y ejecuta:
 
     ```bash
     npm install
     ```
 
-4. **Configura las variables de entorno:**
+3. **Configurar variables de entorno:**
 
-    Crea un archivo `.env` en el directorio raíz del proyecto y agrega las siguientes variables, ajustando sus valores según tus necesidades:
+    Crea un archivo `.env` en el directorio raíz del proyecto y añade las siguientes variables:
 
-    ```plaintext
-    URL=https://www.mercadolibre.com
-    SEARCH=tu término de búsqueda
+    ```env
+    URL=https://www.mercadolibre.com.ar
+    SEARCH=<tu-producto-a-buscar>
+    DATABASE_URL=postgres://<user>:<password>@localhost:5432/<base-de-datos>
+    ```
+
+## Configuración de Prisma
+
+1. **Actualizar el archivo `schema.prisma`:**
+
+    El archivo `schema.prisma` está ubicado en el directorio `prisma`. Asegúrate de que el modelo para `Producto` esté configurado de la siguiente manera para manejar precios con precisión de 3 decimales:
+
+    ```prisma
+    model Producto {
+        id       Int     @id @default(autoincrement())
+        titulo   String
+        precio   Decimal @db.Decimal(10, 3) // Precisión 10, escala 3 (dígitos totales, lugares decimales)
+        envio    String?
+        link     String?
+        imagen   String?
+    }
+    ```
+
+2. **Generar y aplicar migraciones:**
+
+    Ejecuta el siguiente comando para generar una nueva migración y aplicarla a la base de datos:
+
+    ```bash
+    npx prisma migrate dev --name update-producto-schema
+    ```
+
+    Esto actualizará la base de datos para reflejar los cambios en el esquema.
+
+3. **Regenerar el cliente Prisma:**
+
+    Después de aplicar la migración, es recomendable regenerar el cliente Prisma para asegurarte de que esté sincronizado con el nuevo esquema:
+
+    ```bash
+    npx prisma generate
     ```
 
 ## Uso
 
-Para ejecutar el scraper, usa el siguiente comando:
+1. **Ejecutar el script de scraping:**
 
-```bash
-node index.js
+    Una vez configurado, puedes ejecutar el script de scraping para extraer datos y almacenarlos en la base de datos:
+
+    ```bash
+    node index.js
+    ```
+
+2. **Detalles del scraping:**
+
+    El script realiza lo siguiente:
+    
+    - Navega al sitio web especificado.
+    - Realiza una búsqueda utilizando el término definido en la variable de entorno `SEARCH`.
+    - Extrae datos de los productos, incluyendo título, precio, información de envío, enlace e imagen.
+    - Convierte los precios extraídos a formato decimal con precisión de 3 decimales.
+    - Almacena los datos en la base de datos PostgreSQL.
+
+## Notas
+
+- **Precisión de precios:** Los precios se almacenan en la base de datos con una precisión de 3 decimales. Asegúrate de que los precios extraídos del sitio web se formateen correctamente antes de almacenarlos.
+
+- **Errores comunes:** Si encuentras problemas con los datos de precios, verifica que el formato de los precios extraídos esté correctamente gestionado por el script.
+
+## Contribuciones
+
+Las contribuciones son bienvenidas. Por favor, abre un issue o un pull request si encuentras algún problema o deseas mejorar el proyecto.
